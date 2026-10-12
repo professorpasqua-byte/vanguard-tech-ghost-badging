@@ -74,7 +74,19 @@ The data is made up, so the true answer is known. It sits in a separate table th
 
 The estimate is a little low. When the floor is full, some people who would have left anyway are pushed out first, and the method cannot tell those apart. So read the 43% as a careful minimum.
 
+## If Vanguard Tech were a real company
+
+Treat desk shortage as a resource problem, not a discipline problem. The Job Demands Resources model points to this directly. A five day attendance rule is a demand. A guaranteed desk is a resource. When the resource is missing, pulling back is the predictable response, not a sign of poor attitude.
+
+Fix the booking buffer before adding monitoring. The system here oversells desks by about 10 percent on the assumption that some people will not show up. That assumption is what produces the shortage on busy days. A company seeing this pattern should check its own booking ratio before concluding its people are the problem.
+
+Expect short term pushback after any sudden drop in resources. The closure weeks show short visits rising from 22 percent to 29 percent the moment 60 desks disappeared, then falling back once they returned. Psychological reactance predicts this kind of response to a sudden restriction. A temporary space cut is likely to produce a temporary spike in early leaving, and that spike should not be read as a lasting shift in how people feel about the office.
+
+Badge data alone cannot tell you why someone left early. It can only flag when the explanation is more likely to be the building than the person. Decisions about individuals still need a conversation, not a dashboard.
+
 ## Limits
+
+These recommendations follow from the psychology frameworks that shaped the project. They are reasoned suggestions, not findings proven by this dataset.
 
 * The data is synthetic and the crowd effect was built in. This shows that the method works. It does not show that real offices behave this way.
 * Exit taps go missing more often for quick visits, so the short visit rate is probably a little low.
