@@ -1,9 +1,7 @@
 # Vanguard Tech: The Ghost Badging Problem
 
 **When people badge in and leave within the hour, did they choose to, or did the office run out of desks?**
-
 [Live dashboard](https://vanguard-tech-ghost-badging-zxmr94lvuxzmqpfyyt4ucw.streamlit.app/)
-
 ## What happened in the real world
 
 Companies that ordered people back to the office found that many workers had a trick. They tapped their badge, grabbed a coffee, said hello, and went home to do the real work. The trick is called coffee badging. Owl Labs, which surveys hybrid workers, reported in 2023 that 58% of them admitted to it. Source: [CFO.com](https://www.cfo.com/news/workplace-trend-58-of-hybrid-employees-are-coffee-badging/696635/).
