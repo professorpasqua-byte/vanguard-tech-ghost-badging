@@ -1,8 +1,9 @@
+[Live site](https://professorpasqua-byte.github.io/vanguard-tech-ghost-badging/)
+
+
 # Vanguard Tech: The Ghost Badging Problem
 
 **When people badge in and leave within the hour, did they choose to, or did the office run out of desks?**
-
-[Live dashboard](https://vanguard-tech-ghost-badging-zxmr94lvuxzmqpfyyt4ucw.streamlit.app/)
 
 ## What happened in the real world
 
