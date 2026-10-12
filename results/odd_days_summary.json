@@ -1,0 +1,9 @@
+{
+  "method": "scikit learn IsolationForest",
+  "days_checked": 60,
+  "days_flagged": 9,
+  "days_with_a_log_note": 13,
+  "flagged_days_with_a_log_note": 9,
+  "share_of_flagged_days_explained_by_log": 1.0,
+  "share_of_logged_days_found": 0.692
+}

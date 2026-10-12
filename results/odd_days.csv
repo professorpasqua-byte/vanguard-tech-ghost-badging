@@ -1,0 +1,61 @@
+work_date,weekday,strangeness,flagged,reason,building_log_note
+2026-07-02,Thursday,0.807,True,"Compared with a usual Thursday, the floor was almost never close to full; almost nobody arrived to find no desk free.",Company offsite. Most staff were away.
+2026-06-24,Wednesday,0.611,True,"Compared with a usual Wednesday, people stayed for much less time; the floor was almost never close to full.",Fire drill at 11:20. Many people did not come back inside.
+2026-07-16,Thursday,0.592,True,"Compared with a usual Thursday, far more people arrived to find no desk free; many more desk bookings were turned down.",Part of floor 4 closed for repairs. 60 desks out of service.
+2026-08-05,Wednesday,0.581,True,"Compared with a usual Wednesday, many more exit taps were missing; the floor stayed above 90 percent full for much longer.",Badge reader fault. Many exit taps were not recorded.
+2026-07-21,Tuesday,0.579,True,"Compared with a usual Tuesday, far more people arrived to find no desk free; many more desk bookings were turned down.",Part of floor 4 closed for repairs. 60 desks out of service.
+2026-07-23,Thursday,0.563,True,"Compared with a usual Thursday, far more people arrived to find no desk free; many more desk bookings were turned down.",Part of floor 4 closed for repairs. 60 desks out of service.
+2026-07-14,Tuesday,0.527,True,"Compared with a usual Tuesday, far more people arrived to find no desk free; many more desk bookings were turned down.",Part of floor 4 closed for repairs. 60 desks out of service.
+2026-07-22,Wednesday,0.518,True,"Compared with a usual Wednesday, far more people arrived to find no desk free; many more desk bookings were turned down.",Part of floor 4 closed for repairs. 60 desks out of service.
+2026-07-20,Monday,0.517,True,"Compared with a usual Monday, the floor stayed above 90 percent full for much longer; many more desk bookings were turned down.",Part of floor 4 closed for repairs. 60 desks out of service.
+2026-07-15,Wednesday,0.512,False,"Compared with a usual Wednesday, far more people arrived to find no desk free; many more desk bookings were turned down.",Part of floor 4 closed for repairs. 60 desks out of service.
+2026-06-10,Wednesday,0.483,False,"Compared with a usual Wednesday, almost nobody arrived to find no desk free; almost no desk bookings were turned down.",
+2026-07-13,Monday,0.479,False,"Compared with a usual Monday, the floor stayed above 90 percent full for much longer; far more people left within 90 minutes.",Part of floor 4 closed for repairs. 60 desks out of service.
+2026-08-20,Thursday,0.444,False,"Compared with a usual Thursday, far more people arrived to find no desk free; many more desk bookings were turned down.",
+2026-08-04,Tuesday,0.428,False,"Compared with a usual Tuesday, almost nobody arrived to find no desk free; almost no desk bookings were turned down.",
+2026-07-17,Friday,0.42,False,"Compared with a usual Friday, the building got much fuller.",Part of floor 4 closed for repairs. 60 desks out of service.
+2026-07-24,Friday,0.419,False,"Compared with a usual Friday, the building got much fuller.",Part of floor 4 closed for repairs. 60 desks out of service.
+2026-07-08,Wednesday,0.403,False,"Compared with a usual Wednesday, almost nobody arrived to find no desk free; almost no desk bookings were turned down.",
+2026-08-19,Wednesday,0.394,False,"Compared with a usual Wednesday, almost nobody arrived to find no desk free; almost no desk bookings were turned down.",
+2026-07-01,Wednesday,0.393,False,"Compared with a usual Wednesday, almost no desk bookings were turned down; almost nobody arrived to find no desk free.",
+2026-08-11,Tuesday,0.387,False,"Compared with a usual Tuesday, many more desk bookings were turned down; far more people arrived to find no desk free.",
+2026-06-08,Monday,0.383,False,No single measure stands out. The mix of measures is unusual.,
+2026-08-13,Thursday,0.381,False,"Compared with a usual Thursday, the floor was almost never close to full.",
+2026-06-30,Tuesday,0.38,False,"Compared with a usual Tuesday, almost nobody arrived to find no desk free; almost no desk bookings were turned down.",
+2026-06-11,Thursday,0.379,False,"Compared with a usual Thursday, almost nobody arrived to find no desk free; the floor was almost never close to full.",
+2026-07-29,Wednesday,0.379,False,"Compared with a usual Wednesday, many more desk bookings were turned down.",
+2026-06-26,Friday,0.377,False,No single measure stands out. The mix of measures is unusual.,
+2026-07-30,Thursday,0.376,False,"Compared with a usual Thursday, far more people arrived to find no desk free.",
+2026-07-27,Monday,0.374,False,No single measure stands out. The mix of measures is unusual.,
+2026-08-07,Friday,0.372,False,"Compared with a usual Friday, many more exit taps were missing.",
+2026-07-28,Tuesday,0.371,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-15,Monday,0.371,False,No single measure stands out. The mix of measures is unusual.,
+2026-08-06,Thursday,0.37,False,"Compared with a usual Thursday, almost no desk bookings were turned down.",
+2026-08-21,Friday,0.369,False,"Compared with a usual Friday, people stayed for much less time.",
+2026-07-03,Friday,0.366,False,"Compared with a usual Friday, fewer exit taps were missing.",
+2026-06-16,Tuesday,0.365,False,"Compared with a usual Tuesday, almost nobody arrived to find no desk free; the floor was almost never close to full.",
+2026-07-09,Thursday,0.364,False,"Compared with a usual Thursday, almost nobody arrived to find no desk free.",
+2026-07-31,Friday,0.364,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-17,Wednesday,0.364,False,No single measure stands out. The mix of measures is unusual.,
+2026-08-12,Wednesday,0.36,False,No single measure stands out. The mix of measures is unusual.,
+2026-07-10,Friday,0.358,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-25,Thursday,0.353,False,"Compared with a usual Thursday, almost nobody arrived to find no desk free; the floor was almost never close to full.",
+2026-06-04,Thursday,0.352,False,"Compared with a usual Thursday, almost nobody arrived to find no desk free.",
+2026-06-29,Monday,0.352,False,No single measure stands out. The mix of measures is unusual.,
+2026-08-18,Tuesday,0.351,False,"Compared with a usual Tuesday, almost no desk bookings were turned down.",
+2026-08-17,Monday,0.35,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-22,Monday,0.349,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-09,Tuesday,0.347,False,"Compared with a usual Tuesday, far more people arrived to find no desk free.",
+2026-06-05,Friday,0.347,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-02,Tuesday,0.346,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-03,Wednesday,0.346,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-19,Friday,0.346,False,No single measure stands out. The mix of measures is unusual.,
+2026-07-06,Monday,0.346,False,No single measure stands out. The mix of measures is unusual.,
+2026-08-03,Monday,0.345,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-18,Thursday,0.343,False,No single measure stands out. The mix of measures is unusual.,
+2026-08-14,Friday,0.342,False,No single measure stands out. The mix of measures is unusual.,
+2026-07-07,Tuesday,0.34,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-01,Monday,0.339,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-23,Tuesday,0.338,False,No single measure stands out. The mix of measures is unusual.,
+2026-08-10,Monday,0.336,False,No single measure stands out. The mix of measures is unusual.,
+2026-06-12,Friday,0.335,False,No single measure stands out. The mix of measures is unusual.,

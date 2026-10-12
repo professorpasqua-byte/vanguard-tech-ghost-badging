@@ -1,0 +1,188 @@
+{
+  "person_days_used": 19300,
+  "short_visit_rate": 0.229,
+  "base_rate": 0.131,
+  "jump": 0.462,
+  "ramp_start": 0.82,
+  "ramp_width": 0.15,
+  "tipping_fullness": 0.895,
+  "tipping_low": 0.89,
+  "tipping_high": 0.905,
+  "forced_share": 0.427,
+  "forced_share_low": 0.373,
+  "forced_share_high": 0.468,
+  "periods": [
+    {
+      "period": "Before the closure",
+      "office_days": 30,
+      "desks": 300,
+      "person_days": 10068,
+      "short_visit_rate": 0.218,
+      "arrived_to_no_desk": 0.123
+    },
+    {
+      "period": "Floor partly closed",
+      "office_days": 10,
+      "desks": 240,
+      "person_days": 3485,
+      "short_visit_rate": 0.289,
+      "arrived_to_no_desk": 0.251
+    },
+    {
+      "period": "After the closure",
+      "office_days": 20,
+      "desks": 300,
+      "person_days": 6947,
+      "short_visit_rate": 0.217,
+      "arrived_to_no_desk": 0.138
+    }
+  ],
+  "bins": [
+    {
+      "fullness": 0.025,
+      "short_rate": 0.129,
+      "visits": 840
+    },
+    {
+      "fullness": 0.075,
+      "short_rate": 0.143,
+      "visits": 848
+    },
+    {
+      "fullness": 0.125,
+      "short_rate": 0.133,
+      "visits": 939
+    },
+    {
+      "fullness": 0.175,
+      "short_rate": 0.148,
+      "visits": 804
+    },
+    {
+      "fullness": 0.225,
+      "short_rate": 0.13,
+      "visits": 930
+    },
+    {
+      "fullness": 0.275,
+      "short_rate": 0.141,
+      "visits": 879
+    },
+    {
+      "fullness": 0.325,
+      "short_rate": 0.138,
+      "visits": 904
+    },
+    {
+      "fullness": 0.375,
+      "short_rate": 0.127,
+      "visits": 812
+    },
+    {
+      "fullness": 0.425,
+      "short_rate": 0.139,
+      "visits": 922
+    },
+    {
+      "fullness": 0.475,
+      "short_rate": 0.127,
+      "visits": 907
+    },
+    {
+      "fullness": 0.525,
+      "short_rate": 0.139,
+      "visits": 821
+    },
+    {
+      "fullness": 0.575,
+      "short_rate": 0.134,
+      "visits": 968
+    },
+    {
+      "fullness": 0.625,
+      "short_rate": 0.124,
+      "visits": 949
+    },
+    {
+      "fullness": 0.675,
+      "short_rate": 0.127,
+      "visits": 918
+    },
+    {
+      "fullness": 0.725,
+      "short_rate": 0.108,
+      "visits": 766
+    },
+    {
+      "fullness": 0.775,
+      "short_rate": 0.12,
+      "visits": 718
+    },
+    {
+      "fullness": 0.825,
+      "short_rate": 0.155,
+      "visits": 756
+    },
+    {
+      "fullness": 0.875,
+      "short_rate": 0.299,
+      "visits": 662
+    },
+    {
+      "fullness": 0.925,
+      "short_rate": 0.476,
+      "visits": 565
+    },
+    {
+      "fullness": 0.975,
+      "short_rate": 0.586,
+      "visits": 594
+    },
+    {
+      "fullness": 1.025,
+      "short_rate": 0.596,
+      "visits": 731
+    },
+    {
+      "fullness": 1.075,
+      "short_rate": 0.615,
+      "visits": 816
+    },
+    {
+      "fullness": 1.125,
+      "short_rate": 0.56,
+      "visits": 554
+    },
+    {
+      "fullness": 1.175,
+      "short_rate": 0.628,
+      "visits": 226
+    },
+    {
+      "fullness": 1.225,
+      "short_rate": 0.573,
+      "visits": 241
+    },
+    {
+      "fullness": 1.275,
+      "short_rate": 0.577,
+      "visits": 156
+    },
+    {
+      "fullness": 1.325,
+      "short_rate": 0.58,
+      "visits": 69
+    }
+  ],
+  "grade": {
+    "true_tipping_fullness": 0.9,
+    "estimated_tipping_fullness": 0.895,
+    "true_forced_share_of_short_visits": 0.5,
+    "estimated_forced_share_of_short_visits": 0.427,
+    "short_visits_by_true_reason": {
+      "chosen": 2205,
+      "forced": 2214,
+      "other": 10
+    }
+  }
+}
