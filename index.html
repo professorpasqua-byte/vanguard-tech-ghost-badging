@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vanguard Tech: did they choose to leave, or was there nowhere to sit?</title>
+<meta name="description" content="A badge log looks the same whether someone left early by choice or because the office ran out of desks. A synthetic 500-person company, a SQL pipeline, and a model that grades itself against the truth.">
+<meta name="theme-color" content="#1E2E28">
+<meta property="og:title" content="Vanguard Tech: the ghost badging problem">
+<meta property="og:description" content="Can badge data separate people who chose to leave early from people with nowhere to sit? A synthetic case study in SQL, Python and Streamlit.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231E2E28'/%3E%3Crect x='8' y='6' width='16' height='20' rx='3' fill='none' stroke='%23ffffff' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='13' r='2.6' fill='%23ffffff'/%3E%3Cpath d='M12 21h8' stroke='%23ffffff' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..600;1,8..60,400..600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --forest:#1E2E28;        /* deep forest / slate green, the signature colour */
+  --forest-deep:#141F1A;   /* top bar */
+  --forest-mid:#34503F;    /* lines and fills on white */
+  --moss:#5E8171;          /* chart: people who chose to leave */
+  --sage:#B9CFC2;          /* soft text and strokes on forest */
+  --sage-tint:#E3ECE6;
+  --mist:#F1F3F2;
+  --white:#FFFFFF;
+  --ink:#1A2721;
+  --ink-soft:#55645C;
+  --line:#DCE3DF;
+  --ochre:#D9A441;         /* chart: people the crowd pushed out */
+  --ochre-ink:#855608;     /* ochre readable as text on white */
+  --head:'Schibsted Grotesk','Segoe UI',system-ui,-apple-system,sans-serif;
+  --body:'Source Serif 4',Georgia,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;background:var(--white);color:var(--ink);
+  font-family:var(--body);font-size:1.125rem;line-height:1.7;overflow-x:hidden;
+}
+[id]{scroll-margin-top:64px}
+p{margin:0 0 1.1em}
+a{color:var(--forest-mid);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--forest)}
+:focus-visible{outline:3px solid var(--ochre);outline-offset:3px;border-radius:4px}
+.wrap{max-width:40rem;margin:0 auto;padding:0 1.25rem}
+.wide{max-width:56rem;margin:0 auto;padding:0 1.25rem}
+.skip{position:absolute;left:-999px;top:0;background:#fff;color:var(--ink);padding:.5rem .8rem;z-index:50;font-family:var(--head)}
+.skip:focus{left:8px;top:8px}
+
+/* ---------- top bar ---------- */
+.bar{position:sticky;top:0;z-index:30;background:var(--forest-deep)}
+.bar-in{max-width:56rem;margin:0 auto;padding:0 1.25rem;height:54px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-family:var(--head);font-weight:600;font-size:1.08rem;color:#fff;text-decoration:none;letter-spacing:-.01em}
+.brand:hover{color:var(--sage)}
+details.menu{position:relative}
+details.menu summary{
+  list-style:none;cursor:pointer;font-family:var(--head);font-weight:600;font-size:.95rem;
+  padding:.45rem .95rem;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;
+}
+details.menu summary::-webkit-details-marker{display:none}
+details.menu[open] summary{background:rgba(255,255,255,.26)}
+.menu-list{
+  position:absolute;right:0;top:calc(100% + 8px);width:16rem;background:var(--white);
+  border:1px solid var(--line);border-radius:14px;padding:.4rem;box-shadow:0 14px 34px rgba(20,31,26,.22);
+}
+.menu-list a{display:block;padding:.6rem .8rem;border-radius:9px;text-decoration:none;font-family:var(--head);font-weight:500;font-size:.98rem;color:var(--ink)}
+.menu-list a:hover{background:var(--mist)}
+
+/* ---------- headings ---------- */
+h1{
+  font-family:var(--head);font-weight:700;font-size:clamp(2.3rem,8.2vw,4rem);
+  line-height:1.03;letter-spacing:-.03em;margin:0 0 1.1rem;max-width:13ch;
+}
+h2.sec{font-family:var(--head);font-weight:700;font-size:clamp(1.7rem,5.4vw,2.35rem);letter-spacing:-.022em;line-height:1.1;margin:0 0 1.2rem}
+h3{font-family:var(--head);font-weight:600;font-size:1.15rem;letter-spacing:-.01em;margin:2rem 0 .5rem}
+.src{font-size:.95rem;color:var(--ink-soft)}
+
+/* ---------- section rhythm: white, forest bands, soft grey ---------- */
+.sect{padding:3.6rem 0 0}
+.sect.last{padding-bottom:3.6rem}
+.tint{background:var(--mist);padding:3.6rem 0;margin-top:3.6rem}
+.band{background:var(--forest);color:#fff;padding:3.6rem 0;margin-top:3.6rem}
+.band h2.sec,.band h3,.band b{color:#fff}
+.band a{color:#fff}
+.band a:hover{color:var(--sage)}
+.band p{color:#E6EEE9}
+
+/* ---------- hero ---------- */
+.hero{background:var(--forest);color:#fff;padding:2.3rem 0 2.8rem}
+.hero h1{color:#fff}
+.lede{font-size:1.2rem;line-height:1.55;color:#E6EEE9;max-width:36rem;margin-bottom:1.6rem}
+.hero .by{font-family:var(--head);font-size:.95rem;color:var(--sage);margin:0}
+.hero .by a{color:#fff}
+
+.panel{background:var(--white);color:var(--ink);border-radius:18px;padding:1rem .9rem 1.1rem}
+.panel h2{font-family:var(--head);font-size:1.05rem;font-weight:600;margin:.1rem .2rem .2rem;letter-spacing:-.005em}
+.panel .sub{font-size:.92rem;color:var(--ink-soft);margin:0 .2rem .4rem;line-height:1.45}
+#fx{display:block;width:100%;height:auto;touch-action:pan-y;cursor:crosshair;user-select:none;-webkit-user-select:none}
+#fx text{font-family:var(--head);fill:var(--ink-soft);font-size:10px}
+#fx .cap{font-size:10.5px;font-weight:600;fill:var(--ink)}
+#fx .gl{stroke:var(--line);stroke-width:1}
+#fx .half{stroke:var(--ochre);stroke-width:1.2;stroke-dasharray:4 4}
+#fx .base{fill:var(--moss);--o:.28;opacity:.28}
+#fx .extra{fill:var(--ochre);--o:.5;opacity:.5}
+#fx .over{fill:var(--ochre);opacity:.09}
+#fx .hinge{fill:var(--forest);opacity:.14}
+#fx .curve{fill:none;stroke:var(--forest);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+#fx .cont{fill:none;stroke:var(--forest);stroke-width:3;stroke-dasharray:1 6;stroke-linecap:round}
+#fx .basel{fill:none;stroke:var(--moss);stroke-width:1.6}
+#fx .cur{stroke:var(--ink);stroke-width:1;opacity:.5}
+#fx .pt{fill:var(--forest)}
+#fx .pt.thin{fill:#fff;stroke:var(--forest);stroke-width:1.6}
+#fx .dot{fill:var(--forest);stroke:#fff;stroke-width:2.5}
+.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 2.2s cubic-bezier(.3,.6,.2,1) .2s forwards}
+.fade{opacity:0;animation:fade .9s ease 1.6s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fade{to{opacity:var(--o,1)}}
+.presets{display:flex;flex-wrap:wrap;gap:.45rem;margin:.5rem .2rem .2rem}
+.presets button{
+  font:600 .88rem var(--head);color:var(--forest);background:var(--white);
+  border:1.5px solid var(--forest-mid);border-radius:999px;padding:.38rem .85rem;cursor:pointer;
+}
+.presets button:hover{background:var(--sage-tint)}
+.slide{display:block;margin:.7rem .2rem 0}
+.slide span{display:block;font:600 .85rem var(--head);color:var(--ink-soft);margin-bottom:.15rem}
+.slide input{width:100%;accent-color:var(--forest);height:28px;margin:0}
+.readout{margin:.5rem .2rem 0;font-family:var(--head)}
+.readout-head{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.readout-head strong{font-size:1.05rem;font-weight:700;white-space:nowrap}
+.readout-head span{font-size:.88rem;font-weight:600;color:var(--ochre-ink);text-align:right;white-space:nowrap}
+.story{font-family:var(--body);font-size:1rem;line-height:1.5;margin:.35rem 0 .6rem;min-height:4.5em}
+.legend{display:grid;gap:.35rem;font-size:.86rem;color:var(--ink-soft);line-height:1.35}
+.legend div{display:grid;grid-template-columns:18px 1fr;gap:.55rem;align-items:start}
+.legend i{display:block;width:18px;height:12px;border-radius:3px;margin-top:.2em}
+.legend i.c{background:var(--moss);opacity:.5}
+.legend i.p{background:var(--ochre)}
+.note{font-size:.88rem;color:var(--ink-soft);line-height:1.5;margin:.8rem .2rem 0}
+
+/* ---------- context: two explanations ---------- */
+.two{margin:1.6rem 0 1.4rem;display:grid;gap:0}
+.two div{padding:.2rem 0 .2rem 1.1rem;border-left:4px solid var(--forest-mid);margin-bottom:1.2rem}
+.two div.alt{border-left-color:var(--ochre)}
+.two b{display:block;font-family:var(--head);font-weight:700;font-size:1.1rem}
+.two span{font-size:1rem;color:var(--ink-soft);line-height:1.5}
+
+/* ---------- company bars ---------- */
+.desks{list-style:none;margin:1.4rem 0 0;padding:0}
+.desks li{margin:0 0 1.1rem}
+.desks .t{display:flex;justify-content:space-between;gap:1rem;font-family:var(--head);font-size:.98rem;line-height:1.3}
+.desks .t span:last-child{color:rgba(255,255,255,.82);font-variant-numeric:tabular-nums;white-space:nowrap}
+.track{height:12px;background:rgba(255,255,255,.22);border-radius:6px;margin-top:.4rem;overflow:hidden}
+.track i{display:block;height:100%;background:#fff;border-radius:6px}
+.track i.o{background:var(--ochre)}
+.oneoffs{list-style:none;padding:0;margin:1rem 0 0}
+.oneoffs li{display:flex;gap:.9rem;margin:0 0 .9rem}
+.oneoffs li::before{content:"";flex:none;width:8px;height:8px;margin-top:.7em;background:var(--ochre);border-radius:2px}
+
+/* ---------- frames ---------- */
+dl.frames{margin:1.4rem 0 0}
+dl.frames dt{font-family:var(--head);font-weight:600;font-size:1.08rem;margin-top:1.4rem}
+dl.frames dd{margin:.25rem 0 0;padding-left:1rem;border-left:3px solid var(--forest-mid);font-size:1.02rem;line-height:1.55;color:var(--ink-soft)}
+.aside{margin:1.6rem 0 0;padding:1rem 1.1rem;background:var(--mist);border-left:4px solid var(--forest);border-radius:0 12px 12px 0;font-size:1rem;line-height:1.55}
+.tint .aside{background:var(--white)}
+.aside strong{font-family:var(--head)}
+
+/* ---------- closure widget ---------- */
+.seg{display:flex;flex-wrap:wrap;gap:.45rem;margin:1.4rem 0 1.2rem}
+.seg button{
+  font:600 .92rem var(--head);color:var(--forest);background:var(--white);
+  border:1.5px solid var(--forest-mid);border-radius:999px;padding:.5rem 1rem;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--forest);color:#fff;border-color:var(--forest)}
+.seg button:not([aria-pressed="true"]):hover{background:var(--sage-tint)}
+.cl{background:var(--white);border-radius:18px;padding:1.2rem 1.1rem 1.3rem;font-family:var(--head)}
+.cl .state{font-size:1.02rem;font-weight:600;margin:0 0 1rem;line-height:1.35}
+.cl .row{margin:0 0 1.05rem}
+.cl .lab{display:flex;justify-content:space-between;gap:1rem;align-items:baseline;font-size:.96rem;line-height:1.3}
+.cl .lab em{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums}
+.cl .rail{height:16px;background:var(--mist);border-radius:6px;margin-top:.4rem;overflow:hidden}
+.cl .rail i{display:block;height:100%;width:0;border-radius:6px;background:var(--forest);transition:width .55s cubic-bezier(.3,.6,.2,1)}
+.cl .rail i.o{background:var(--ochre)}
+.cl .desk{display:flex;justify-content:space-between;font-size:.96rem;padding-bottom:.9rem;margin-bottom:1rem;border-bottom:1px solid var(--line)}
+.cl .desk em{font-style:normal;font-weight:700}
+.cl .small{font-size:.84rem;color:var(--ink-soft);margin:.2rem 0 0;line-height:1.45}
+
+/* ---------- pipeline (a real sequence, so it is numbered) ---------- */
+ol.steps{list-style:none;margin:1.6rem 0 0;padding:0;counter-reset:s}
+ol.steps li{position:relative;padding:0 0 1.3rem 3rem;margin:0;counter-increment:s}
+ol.steps li::before{
+  content:counter(s);position:absolute;left:0;top:.1rem;width:2rem;height:2rem;border-radius:50%;
+  background:var(--forest);color:#fff;font:700 .95rem/2rem var(--head);text-align:center;
+}
+ol.steps li::after{content:"";position:absolute;left:1rem;top:2.3rem;bottom:.2rem;width:2px;background:var(--line)}
+ol.steps li:last-child::after{display:none}
+ol.steps b{font-family:var(--head);font-weight:600;display:block;line-height:1.35;margin-bottom:.1rem}
+ol.steps span{font-size:1rem;line-height:1.55;color:var(--ink-soft);display:block}
+code{font:500 .86em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--sage-tint);padding:.08em .35em;border-radius:4px;color:var(--forest)}
+
+/* ---------- scorecard ---------- */
+.score{margin:1.6rem 0 0}
+.score .item{margin:0 0 1.9rem}
+.score .q{font-family:var(--head);font-weight:600;font-size:1.05rem;line-height:1.3;margin:0 0 .15rem}
+.score .vals{display:flex;flex-wrap:wrap;gap:.2rem 1.3rem;font-family:var(--head);font-size:.95rem;color:var(--ink-soft);margin:0 0 .75rem}
+.score .vals b{color:var(--ink);font-variant-numeric:tabular-nums}
+.sr{position:relative;height:22px;background:var(--white);border-radius:6px;margin:0 .2rem}
+.sr .band2{position:absolute;top:0;bottom:0;background:rgba(217,164,65,.45);border-radius:4px}
+.sr .truth{position:absolute;top:-6px;bottom:-6px;width:3px;margin-left:-1.5px;background:var(--ink);border-radius:2px}
+.sr .found{position:absolute;top:3px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--forest);border:2.5px solid #fff;box-shadow:0 0 0 1.5px var(--forest)}
+.sr-ends{display:flex;justify-content:space-between;font-family:var(--head);font-size:.8rem;color:var(--ink-soft);margin:.4rem .2rem 0}
+.key{display:flex;flex-wrap:wrap;gap:.3rem 1.2rem;font-family:var(--head);font-size:.85rem;color:var(--ink-soft);margin:.2rem 0 1.6rem}
+.key span{display:inline-flex;align-items:center;gap:.45rem}
+.key i{display:inline-block}
+.key .k-t{width:3px;height:14px;background:var(--ink);border-radius:2px}
+.key .k-f{width:12px;height:12px;border-radius:50%;background:var(--forest)}
+.key .k-r{width:16px;height:10px;border-radius:3px;background:rgba(217,164,65,.55)}
+
+/* ---------- strange-days grid ---------- */
+.grid60{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;max-width:22rem;margin:1.6rem 0 1rem}
+.grid60 i{aspect-ratio:1;border-radius:5px;background:var(--sage-tint)}
+.grid60 i.hit{background:var(--forest)}
+.grid60 i.miss{background:transparent;border:2.5px solid var(--ochre-ink)}
+.glegend{display:grid;gap:.5rem;font-family:var(--head);font-size:.95rem;line-height:1.35;margin:0 0 1.2rem}
+.glegend div{display:grid;grid-template-columns:22px 1fr;gap:.7rem;align-items:center}
+.glegend i{display:block;width:22px;height:22px;border-radius:5px;background:var(--sage-tint)}
+.glegend i.hit{background:var(--forest)}
+.glegend i.miss{background:transparent;border:2.5px solid var(--ochre-ink)}
+
+/* ---------- calendar of 60 days ---------- */
+.cal{display:grid;grid-template-columns:2.6rem repeat(5,1fr);gap:5px;max-width:24rem;margin:1.6rem 0 1rem;font-family:var(--head)}
+.cal .h{font-size:.78rem;color:var(--ink-soft);text-align:center;padding-bottom:.15rem}
+.cal .w{font-size:.78rem;color:var(--ink-soft);display:flex;align-items:center}
+.cal button{
+  aspect-ratio:1;border:2.5px solid transparent;border-radius:6px;background:var(--sage-tint);color:var(--ink);
+  font:600 .78rem var(--head);cursor:pointer;padding:0;
+}
+.cal button.hit{background:var(--forest);color:#fff}
+.cal button.miss{background:transparent;border-color:var(--ochre-ink);color:var(--ink)}
+.cal button[aria-pressed="true"]{outline:3px solid var(--ochre);outline-offset:2px}
+.dayinfo{background:var(--mist);border-radius:14px;padding:1rem 1.1rem;margin:0 0 1.6rem;font-size:1rem;line-height:1.55}
+.dayinfo b{font-family:var(--head);font-weight:700}
+.dayinfo .dt{font-family:var(--head);font-weight:700;font-size:1.1rem;margin:0 0 .15rem}
+.dayinfo .st{font-family:var(--head);font-size:.92rem;font-weight:600;color:var(--ochre-ink);margin:0 0 .6rem}
+.dayinfo p{margin:0 0 .5rem}
+.dayinfo p:last-child{margin:0}
+
+/* ---------- embed ---------- */
+.embed{border-radius:16px;overflow:hidden;background:var(--white);margin-top:1.4rem}
+.embed iframe{display:block;width:100%;height:78vh;min-height:560px;max-height:780px;border:0}
+.embed-foot{padding:.75rem 1rem;background:var(--mist);font-size:.94rem;color:var(--ink-soft)}
+.embed-foot a{color:var(--forest-mid)}
+.band .embed-foot{color:var(--ink-soft)}
+
+/* ---------- limits ---------- */
+.limits{margin:1.2rem 0 0;padding:0;list-style:none}
+.limits li{display:flex;gap:.9rem;margin:0 0 1.1rem}
+.limits li::before{content:"";flex:none;width:8px;height:8px;margin-top:.7em;background:var(--forest);border-radius:2px}
+.limits b{font-family:var(--head);font-weight:600}
+
+/* ---------- footer ---------- */
+footer.band{margin-top:4rem;padding:2.4rem 0 2.8rem;font-size:1rem}
+footer p{margin:0 0 .7rem}
+footer .tools{font-family:var(--head);font-size:.92rem;color:var(--sage)}
+footer .links{font-family:var(--head);font-size:.98rem}
+footer hr{border:0;border-top:1px solid rgba(255,255,255,.2);margin:1.4rem 0}
+
+@media (min-width:720px){
+  .hero{padding:3.4rem 0 3.8rem}
+  .hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.12fr);gap:2.6rem;align-items:start}
+  h1{margin-top:.4rem}
+  .two{grid-template-columns:1fr 1fr;gap:1.6rem}
+  .two div{margin-bottom:0}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .draw{animation:none;stroke-dashoffset:0}
+  .fade{animation:none;opacity:var(--o,1)}
+  *{transition:none !important}
+}
+</style>
+</head>
+
+<body>
+<a class="skip" href="#story">Skip to content</a>
+
+<header class="bar">
+  <div class="bar-in">
+    <a class="brand" href="#top">Vanguard Tech</a>
+    <details class="menu" id="menu">
+      <summary>Sections</summary>
+      <nav class="menu-list" aria-label="Sections">
+        <a href="#top">The hinge</a>
+        <a href="#story">Same tap, two stories</a>
+        <a href="#company">Meet Vanguard</a>
+        <a href="#idea">How to tell them apart</a>
+        <a href="#closure">The 60 missing desks</a>
+        <a href="#build">How it is built</a>
+        <a href="#grade">Grading itself</a>
+        <a href="#odd">The strange days</a>
+        <a href="#dashboard">Live dashboard</a>
+        <a href="#limits">Before quoting a number</a>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<main>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="wide">
+    <div class="hero-grid">
+      <div>
+        <h1>Same badge tap, two different reasons to leave.</h1>
+        <p class="lede">A badge log records when you arrived and when you left. It cannot record whether you had a desk. I built a made-up company with 500 people and 300 desks to see if the logs alone could tell the two stories apart. They can, if you watch for the moment the building gets too full.</p>
+        <p class="by">By Nwafor Martins. All data is synthetic. <a href="https://github.com/professorpasqua-byte/vanguard-tech-ghost-badging" target="_blank" rel="noopener noreferrer">Code on GitHub</a></p>
+      </div>
+
+      <div class="panel">
+        <h2>Who leaves within 90 minutes, as the building fills</h2>
+        <p class="sub">Drag across the chart, use the slider, or tap a preset. Each step is one 5-point slice of how full the building was.</p>
+        <svg id="fx" viewBox="0 0 360 272" role="img" tabindex="0"
+             aria-label="Chart of real results: the share of arrivals who leave within 90 minutes, by how full the building is. The rate stays near 13 percent until the building is about 85 percent full, then climbs steeply to about 60 percent once the building is at capacity, and stays there. Use the slider below or the left and right arrow keys to read each level."></svg>
+        <noscript><p class="note">This chart needs JavaScript. In short: about 13% of arrivals leave within 90 minutes on calm days, the rate bends upward near 89.5% full, and above 100% full between 56% and 63% leave early.</p></noscript>
+        <div class="presets" role="group" aria-label="Jump to a crowding level">
+          <button type="button" data-v="57.5">Calm day</button>
+          <button type="button" data-v="87.5">Near the hinge</button>
+          <button type="button" data-v="102.5">Over capacity</button>
+        </div>
+        <label class="slide"><span>Building fullness at arrival</span>
+          <input id="fxRange" type="range" min="52.5" max="132.5" step="5" value="102.5"></label>
+        <div class="readout">
+          <div class="readout-head"><strong id="fxLabel">Building 100% full</strong><span id="fxRate"></span></div>
+          <p class="story" id="fxText" aria-live="polite"></p>
+          <div class="legend">
+            <div><i class="c"></i><span>Left by choice. A steady floor of 13.1%, however calm or busy.</span></div>
+            <div><i class="p"></i><span>Pushed out. Everything the rate adds above that floor.</span></div>
+          </div>
+        </div>
+        <p class="note">Real results from 19,300 person-days. Each dot is a 5-point slice; hollow dots are slices with fewer than 300 visits, so they are noisier. Below 50% full the rate never leaves 12.7 to 14.8%, so the chart starts there.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTEXT -->
+<section class="sect" id="story">
+  <div class="wrap">
+    <h2 class="sec">A badge log cannot say why someone left early</h2>
+    <p>Plenty of companies have ordered people back to the office, and plenty of people found a workaround: tap in, grab a coffee, be seen, and go home to do the actual work. It is called coffee badging. When Owl Labs surveyed hybrid workers in 2023, 58% admitted to doing it.</p>
+    <p>Some employers reached for surveillance. In August 2025 Samsung began tracking office attendance for some US staff in its semiconductor business, and the move was reported as a way to stop coffee badging.</p>
+
+    <div class="two">
+      <div><b>They chose to go.</b><span>They never meant to stay. The badge was the whole point.</span></div>
+      <div class="alt"><b>They had nowhere to sit.</b><span>They came in, found no desk, and went home to work.</span></div>
+    </div>
+
+    <p>The second story is real too. In January 2025, some Amazon workers reported too few desks and no parking when the company's return-to-office rule started. In September 2026, Money.ca reported that Canada's federal government could not yet seat about 34,000 employees for four days a week, under a rule that began on July 6, 2026.</p>
+    <p>Look at the badge reader and the two cases are identical: in, then out. So I built a company where I know which is which, and asked whether an analyst with only the logs could work it out.</p>
+    <p class="src">Sources: <a href="https://www.cfo.com/news/workplace-trend-58-of-hybrid-employees-are-coffee-badging/696635/" target="_blank" rel="noopener noreferrer">CFO.com</a> on the Owl Labs survey, <a href="https://www.fastcompany.com/91381406/samsung-is-tracking-employee-office-attendance" target="_blank" rel="noopener noreferrer">Fast Company</a> and <a href="https://www.hrgrapevine.com/us/content/article/2025-08-07-samsung-orders-five-day-rto-for-some-us-staff-has-a-plan-to-stop-them-coffee-badging" target="_blank" rel="noopener noreferrer">HR Grapevine</a> on Samsung, <a href="https://tech.slashdot.org/story/25/01/20/0516216/" target="_blank" rel="noopener noreferrer">Slashdot</a> (citing the New York Post) on Amazon, and <a href="https://money.ca/employment/federal-return-to-office-desk-space-shortage" target="_blank" rel="noopener noreferrer">Money.ca</a> on Canada.</p>
+  </div>
+</section>
+
+<!-- COMPANY -->
+<section class="band" id="company">
+  <div class="wrap">
+    <h2 class="sec">Meet Vanguard Tech</h2>
+    <p>Five hundred employees share 300 desks. On Monday, June 1, 2026 the company starts a five-day office rule, and I follow the next 12 weeks. Inside the company, leaving soon after you badge in is called ghost badging. Outside, it is coffee badging.</p>
+    <ul class="desks" aria-label="People and desks">
+      <li><div class="t"><span>Employees</span><span>500</span></div><div class="track"><i style="width:100%"></i></div></li>
+      <li><div class="t"><span>Desk bookings accepted (about 10% over capacity)</span><span>about 330</span></div><div class="track"><i style="width:66%"></i></div></li>
+      <li><div class="t"><span>Desks</span><span>300</span></div><div class="track"><i style="width:60%"></i></div></li>
+      <li><div class="t"><span>Desks in weeks 7 and 8, after 60 go out of service</span><span>240</span></div><div class="track"><i class="o" style="width:48%"></i></div></li>
+    </ul>
+    <p style="margin-top:1.6rem">The booking system oversells on purpose, because some people never turn up. That is how a floor can end up with more people booked than desks. Three more things keep the story honest:</p>
+    <ul class="oneoffs">
+      <li><span>Part of floor 4 closes for two weeks, taking 60 desks with it.</span></li>
+      <li><span>Three one-off days happen: a fire drill, a company offsite, and a day the badge reader fault loses many exit taps.</span></li>
+      <li><span>Everyone in the company is synthetic. The names come from a fake-name library and the analysis never reads them.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- IDEA -->
+<section class="sect" id="idea">
+  <div class="wrap">
+    <h2 class="sec">Look for the hinge</h2>
+    <p>Some people leave early on any day, because they want to. In the real results that floor is 13.1%, and it barely moves from an almost empty building up to about 80% full. If a crowded floor pushes people out, the rate should hold at that floor and then bend upward as the building nears capacity. Everything above the floor is the crowd's doing.</p>
+    <p>I fit exactly that shape to 19,300 person-days: a flat base, plus a ramp of 46.2 extra points that starts at 82% full and is 15 points wide. The middle of that ramp, 89.5% full, is the hinge, with a plausible range of 89.0 to 90.5%. Overall, 22.9% of person-days were short visits, meaning under 90 minutes. Past 100% full the rate sits between 56% and 63%.</p>
+    <p>Across the whole 12 weeks, about 43% of short visits (range 37 to 47%) were pushed out by a full floor.</p>
+
+    <h3>Three ideas that decided what to measure</h3>
+    <dl class="frames">
+      <dt>Person-environment fit</dt>
+      <dd>People stay engaged when the workplace gives them what the work needs. A missing desk is a gap in the most basic need on that list.</dd>
+      <dt>Job Demands-Resources, from Arnold Bakker and Evangelia Demerouti</dt>
+      <dd>A rule that demands presence but doesn't supply the means to work pushes people to withdraw. A desk is about as basic as a resource gets.</dd>
+      <dt>Psychological reactance, from Jack Brehm</dt>
+      <dd>When a rule takes a freedom away, people tend to find small ways to take some back. Coffee badging can be one of them.</dd>
+    </dl>
+    <div class="aside"><strong>A word on these.</strong> They shaped which numbers I collected. This data does not prove them, and I built the crowding effect in myself, so it could not.</div>
+  </div>
+</section>
+
+<!-- CLOSURE -->
+<section class="tint" id="closure">
+  <div class="wrap">
+    <h2 class="sec">The same people, 60 fewer desks</h2>
+    <p>The closure gives a second check that does not lean on the hinge. In weeks 7 and 8 the same kind of employees came in, but the building was 60 desks smaller. Tap each period to compare.</p>
+
+    <div class="seg" role="group" aria-label="Choose a period">
+      <button type="button" data-s="normal" aria-pressed="true">Before the closure</button>
+      <button type="button" data-s="closed" aria-pressed="false">Floor partly closed</button>
+      <button type="button" data-s="back" aria-pressed="false">After the closure</button>
+    </div>
+
+    <div class="cl" aria-live="polite">
+      <p class="state" id="clState"></p>
+      <div class="desk"><span>Desks in service</span><em id="clDesks"></em></div>
+      <div class="row">
+        <div class="lab"><span>Left within 90 minutes</span><em id="clShort"></em></div>
+        <div class="rail"><i id="clShortBar" class="o"></i></div>
+      </div>
+      <div class="row">
+        <div class="lab"><span>Arrived to no free desk</span><em id="clNo"></em></div>
+        <div class="rail"><i id="clNoBar"></i></div>
+      </div>
+      <p class="small">Bars use a 0 to 40% scale so the changes are readable.</p>
+    </div>
+
+    <p style="margin-top:1.4rem">Short visits rose from 21.8% to 28.9%, and arriving to no free desk went from 12.3% to 25.1%. Once the desks returned, short visits fell to 21.7% and no-desk arrivals to 13.8%. A sudden change of attitude would be a strange explanation for that.</p>
+    <p class="src">Because I wrote the crowding effect into the simulation, this shows the method can see it. It does not show that real offices behave this way.</p>
+  </div>
+</section>
+
+<!-- BUILD -->
+<section class="sect" id="build">
+  <div class="wrap">
+    <h2 class="sec">Built in SQL, tested, then graded</h2>
+    <p>Most data projects are a few CSV files and a notebook. This one keeps everything in a single SQLite database, <code>vanguard.db</code>, and does the cleaning in SQL, so every step can be read and re-run.</p>
+    <ol class="steps">
+      <li><b>Simulate the 12 weeks</b><span>About 42,000 badge taps, 20,000 desk bookings and 500 employees go into raw tables.</span></li>
+      <li><b>Pair each tap in with its tap out</b><span>The SQL fixes upper and lower case, trims stray spaces, removes double taps and handles missing taps.</span></li>
+      <li><b>Count the building every 15 minutes</b><span>Occupancy at each quarter hour, plus a summary for each day.</span></li>
+      <li><b>One row per person per day</b><span>Each row says whether it was a short visit (under 90 minutes) and how full the building was at arrival.</span></li>
+      <li><b>Run two models</b><span>One looks for the hinge. The other, an Isolation Forest, looks for the strangest days.</span></li>
+      <li><b>Test and publish</b><span>Fifteen tests check the SQL matching and the models, and a Streamlit dashboard shows the results.</span></li>
+    </ol>
+    <div class="aside"><strong>Nobody gets singled out.</strong> The analysis never picks out a person. Its results are counts, and the strange-days model looks at days, not people. The dashboard's data previews use synthetic records, and every name in them is fake. That is a design rule, not an accident.</div>
+  </div>
+</section>
+
+<!-- GRADE -->
+<section class="tint" id="grade">
+  <div class="wrap">
+    <h2 class="sec">How close did it get?</h2>
+    <p>Because the data is made up, the true answers are known. They sit in a separate table the analysis never reads while it works. At the very end the script compares its own answers with that truth.</p>
+
+    <div class="key" aria-hidden="true">
+      <span><i class="k-t"></i>The truth</span>
+      <span><i class="k-f"></i>What the model found</span>
+      <span><i class="k-r"></i>Its plausible range</span>
+    </div>
+
+    <div class="score">
+      <div class="item">
+        <p class="q">How full is the building when early leaving takes off?</p>
+        <p class="vals"><span>Truth <b>90.0%</b></span><span>Found <b>89.5%</b></span><span>Range <b>89.0 to 90.5%</b></span></p>
+        <div class="sr" aria-hidden="true">
+          <i class="band2" style="left:37.5%;width:18.75%"></i>
+          <i class="truth" style="left:50%"></i>
+          <i class="found" style="left:43.75%"></i>
+        </div>
+        <div class="sr-ends" aria-hidden="true"><span>86%</span><span>94%</span></div>
+      </div>
+
+      <div class="item">
+        <p class="q">What share of short visits did a full floor cause?</p>
+        <p class="vals"><span>Truth <b>50%</b></span><span>Found <b>42.7%</b></span><span>Range <b>37.3 to 46.8%</b></span></p>
+        <div class="sr" aria-hidden="true">
+          <i class="band2" style="left:37.3%;width:9.5%"></i>
+          <i class="truth" style="left:50%"></i>
+          <i class="found" style="left:42.7%"></i>
+        </div>
+        <div class="sr-ends" aria-hidden="true"><span>0%</span><span>100%</span></div>
+      </div>
+    </div>
+
+    <p>The hinge lands inside its range. The pushed-out share does not: the truth sits just above it. In the simulation's own books, 2,214 of the 4,429 short visits were forced by a full floor and 2,205 were chosen, with 10 for other reasons. The model counted a little under that, so I read 42.7% as a careful minimum. When the floor is full, some people who would have left anyway get pushed out first, and the method cannot tell them apart from everyone else.</p>
+  </div>
+</section>
+
+<!-- ODD DAYS -->
+<section class="sect" id="odd">
+  <div class="wrap">
+    <h2 class="sec">Finding the strange days without being told</h2>
+    <p>The company has 60 working days, shown below as 12 weeks. Thirteen of them have a note in the building log: the offsite, the fire drill, the reader fault, and the closure days. The Isolation Forest never saw that log. It flagged 9 days, and every one of the 9 has a note, so there were no false alarms. It found 9 of the 13 noted days. Tap any day to see what the model noticed.</p>
+
+    <div class="cal" id="cal" role="group" aria-label="The 60 working days, one row per week. Tap a day for details."></div>
+    <div class="glegend">
+      <div><i class="hit"></i><span><b>9</b> flagged by the model, each with a log note</span></div>
+      <div><i class="miss"></i><span><b>4</b> noted in the log but not flagged</span></div>
+      <div><i></i><span><b>47</b> ordinary days</span></div>
+    </div>
+
+    <div class="dayinfo" id="dayInfo" aria-live="polite"></div>
+
+    <p>All three one-off days were caught. The four misses are all closure days, and their strangeness scores (0.42 to 0.51) sat just under the lowest score that got flagged (0.52). The model saw the closure days as unusual, but for these four, not unusual enough to cross the line.</p>
+    <p class="src">Strangeness is a score from the model, higher meaning less like a usual day of that weekday. If scikit-learn is missing, the script falls back to a small NumPy version of the same idea, so it also runs on a phone.</p>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section class="band" id="dashboard">
+  <div class="wrap">
+    <h2 class="sec">Try the dashboard yourself</h2>
+    <p>This is the live app. Use the sidebar to open <b>Replay a Day</b>, where you can watch one day fill up, and <b>Desk Planner</b>, which shows how many desks it would take to keep early leaving low.</p>
+  </div>
+  <div class="wide">
+    <div class="embed">
+      <iframe src="https://vanguard-tech-ghost-badging-zxmr94lvuxzmqpfyyt4ucw.streamlit.app/?embed=true" loading="lazy" title="Vanguard Tech ghost badging dashboard, Streamlit app" allow="clipboard-write"></iframe>
+      <div class="embed-foot">Free Streamlit apps go to sleep when nobody visits. If the frame shows a wake up button, tap it and give it a few seconds. You can also <a href="https://vanguard-tech-ghost-badging-zxmr94lvuxzmqpfyyt4ucw.streamlit.app/" target="_blank" rel="noopener noreferrer">open the dashboard on its own page</a>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- LIMITS -->
+<section class="sect last" id="limits">
+  <div class="wrap">
+    <h2 class="sec">Before quoting a number</h2>
+    <ul class="limits">
+      <li><span><b>The crowd effect is built in.</b> This shows the method works. It does not show that real offices behave this way.</span></li>
+      <li><span><b>Quick visits lose their exit taps more often.</b> That makes the real short-visit rate probably a little higher than measured.</span></li>
+      <li><span><b>Crowding and time of day travel together.</b> The floor is calm early and busy later, so fullness and arrival time are tangled.</span></li>
+      <li><span><b>A missing exit tap is assumed to mean an 8-hour stay</b> when counting people inside. That is a guess.</span></li>
+      <li><span><b>The psychology is a design guide.</b> The ideas shaped what I measured. None of them is tested here.</span></li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer class="band">
+  <div class="wrap">
+    <p><b>Nwafor Martins</b><br>People Analytics Engineer and I-O Psychology Consultant</p>
+    <p class="links">
+      <a href="mailto:nwaforchubby@gmail.com">Email</a><br>
+      <a href="https://github.com/professorpasqua-byte/vanguard-tech-ghost-badging" target="_blank" rel="noopener noreferrer">Source code and data dictionary</a><br>
+      <a href="https://vanguard-tech-ghost-badging-zxmr94lvuxzmqpfyyt4ucw.streamlit.app/" target="_blank" rel="noopener noreferrer">Live dashboard</a>
+    </p>
+    <hr>
+    <p class="links">More case studies:
+      <a href="https://professorpasqua-byte.github.io/aegis-systems-survival-analysis/" target="_blank" rel="noopener noreferrer">Aegis Systems, a survival analysis of quiet quitting</a> and
+      <a href="https://github.com/professorpasqua-byte/fathom-labs-retention" target="_blank" rel="noopener noreferrer">Fathom Labs, what predicts researcher attrition</a>.</p>
+    <p class="tools">Built with Python, SQL, SQLite, pandas, NumPy, scikit-learn, Faker and Streamlit.</p>
+    <p class="tools">Vanguard Tech, its people and every analysis figure are synthetic. The real parts are the news events cited above. No real person's data appears anywhere in this project.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  /* ---------- menu: close on pick or Escape ---------- */
+  var menu=document.getElementById('menu');
+  menu.addEventListener('click',function(e){if(e.target.closest('a'))menu.removeAttribute('open')});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')menu.removeAttribute('open')});
+  document.addEventListener('click',function(e){if(menu.open&&!menu.contains(e.target))menu.removeAttribute('open')});
+
+  /* ---------- hero chart: real results from tipping_point.json ---------- */
+  var BINS=[[52.5, 13.9, 821], [57.5, 13.4, 968], [62.5, 12.4, 949], [67.5, 12.7, 918], [72.5, 10.8, 766], [77.5, 12.0, 718], [82.5, 15.5, 756], [87.5, 29.9, 662], [92.5, 47.6, 565], [97.5, 58.6, 594], [102.5, 59.6, 731], [107.5, 61.5, 816], [112.5, 56.0, 554], [117.5, 62.8, 226], [122.5, 57.3, 241], [127.5, 57.7, 156], [132.5, 58.0, 69]]; /* [fullness %, short-visit rate %, visits] */
+  var svg=document.getElementById('fx'),rng=document.getElementById('fxRange');
+  var X0=50,X1=135,L=40,R=345,T=24,B=232,YMAX=70,BASE=13.1;
+  function sx(v){return L+(v-X0)/(X1-X0)*(R-L)}
+  function sy(v){return B-v/YMAX*(B-T)}
+  function f(n){return n.toFixed(1)}
+  var h='',g,k,i;
+  for(g=0;g<=60;g+=10){
+    h+='<line class="gl" x1="'+L+'" x2="'+R+'" y1="'+f(sy(g))+'" y2="'+f(sy(g))+'"/>';
+    h+='<text x="'+(L-5)+'" y="'+f(sy(g)+3.5)+'" text-anchor="end">'+g+'%</text>';
+  }
+  for(k=50;k<=130;k+=10){h+='<text x="'+f(sx(k))+'" y="'+(B+15)+'" text-anchor="middle">'+k+'%</text>'}
+  h+='<text x="'+((L+R)/2)+'" y="'+(B+30)+'" text-anchor="middle">How full the building is when someone arrives</text>';
+  h+='<rect class="over" x="'+f(sx(100))+'" y="'+T+'" width="'+f(R-sx(100))+'" height="'+(B-T)+'"/>';
+  h+='<text x="'+(R-3)+'" y="'+(T+10)+'" text-anchor="end">Over capacity</text>';
+  h+='<rect class="hinge" x="'+f(sx(89))+'" y="'+T+'" width="'+f(sx(90.5)-sx(89))+'" height="'+(B-T)+'"/>';
+  h+='<text x="'+f(sx(90.5)+4)+'" y="'+(T-10)+'">Hinge 89.0 to 90.5%</text>';
+  h+='<text class="cap" x="'+L+'" y="'+(T-10)+'">Leave within 90 min</text>';
+  h+='<rect class="base" x="'+L+'" y="'+f(sy(BASE))+'" width="'+(R-L)+'" height="'+f(B-sy(BASE))+'"/>';
+  h+='<text x="'+(L+5)+'" y="'+f(sy(BASE)+15)+'">Calm-day floor 13.1%</text>';
+  var ex='M'+f(sx(77.5))+' '+f(sy(BASE));
+  BINS.forEach(function(p){if(p[0]>=82.5)ex+=' L'+f(sx(p[0]))+' '+f(sy(Math.max(p[1],BASE)))});
+  ex+=' L'+f(sx(132.5))+' '+f(sy(BASE))+' Z';
+  h+='<path class="extra" d="'+ex+'"/>';
+  h+='<line class="half" x1="'+L+'" x2="'+R+'" y1="'+f(sy(50))+'" y2="'+f(sy(50))+'"/>';
+  h+='<text x="'+(L+4)+'" y="'+f(sy(50)-5)+'">Half of arrivals</text>';
+  var d='';
+  BINS.forEach(function(p,j){d+=(j?' L':'M')+f(sx(p[0]))+' '+f(sy(p[1]))});
+  h+='<path class="curve draw" pathLength="1" d="'+d+'"/>';
+  h+='<g class="fade">';
+  BINS.forEach(function(p){
+    h+='<circle class="pt'+(p[2]<300?' thin':'')+'" cx="'+f(sx(p[0]))+'" cy="'+f(sy(p[1]))+'" r="3.2"/>';
+  });
+  h+='</g>';
+  h+='<line class="cur" id="fxCur" x1="0" x2="0" y1="'+T+'" y2="'+B+'"/>';
+  h+='<circle class="dot" id="fxDot" r="6.5" cx="0" cy="0"/>';
+  svg.innerHTML=h;
+  var cur=document.getElementById('fxCur'),dot=document.getElementById('fxDot');
+  var lab=document.getElementById('fxLabel'),rate=document.getElementById('fxRate'),txt=document.getElementById('fxText');
+
+  function show(v){
+    v=Math.max(52.5,Math.min(132.5,Math.round((v-2.5)/5)*5+2.5));
+    var p=null;BINS.forEach(function(q){if(Math.abs(q[0]-v)<0.01)p=q});
+    var X=sx(v),Y=sy(p[1]);
+    cur.setAttribute('x1',X);cur.setAttribute('x2',X);
+    dot.setAttribute('cx',X);dot.setAttribute('cy',Y);
+    rng.value=v;
+    lab.textContent='Building '+(v-2.5)+' to '+(v+2.5)+'% full';
+    rate.textContent=p[1].toFixed(1)+'% left';
+    var t=p[2].toLocaleString('en-US')+' arrivals came in at this level, and '+p[1].toFixed(1)+'% of them left within 90 minutes. ';
+    if(v<80)t+='A calm floor. This is the part people choose: it stays near 13% however full the building gets.';
+    else if(v<85)t+='The building is nearly full, and early leaving is just starting to lift off the floor.';
+    else if(v<95)t+='This slice sits on the hinge. The model puts the turning point at 89.5% full, and early leaving is climbing fast.';
+    else t+='At capacity and beyond, the rate levels off between 56% and 63%. The model reads everything above the 13% floor as the crowd pushing people out.';
+    if(p[2]<300)t+=' Few arrivals ever came in this crowded, so read this slice with care.';
+    txt.textContent=t;
+  }
+  function fromEvent(e){
+    var bx=svg.getBoundingClientRect(),vx=(e.clientX-bx.left)/bx.width*360;
+    show(X0+(vx-L)/(R-L)*(X1-X0));
+  }
+  var down=false;
+  svg.addEventListener('pointerdown',function(e){down=true;fromEvent(e)});
+  svg.addEventListener('pointermove',function(e){if(down||e.pointerType==='mouse')fromEvent(e)});
+  window.addEventListener('pointerup',function(){down=false});
+  svg.addEventListener('keydown',function(e){
+    var v=parseFloat(rng.value);
+    if(e.key==='ArrowRight'||e.key==='ArrowUp'){show(v+5);e.preventDefault()}
+    else if(e.key==='ArrowLeft'||e.key==='ArrowDown'){show(v-5);e.preventDefault()}
+    else if(e.key==='Home'){show(52.5);e.preventDefault()}
+    else if(e.key==='End'){show(132.5);e.preventDefault()}
+  });
+  rng.addEventListener('input',function(){show(parseFloat(rng.value))});
+  Array.prototype.forEach.call(document.querySelectorAll('.presets button'),function(bt){
+    bt.addEventListener('click',function(){show(parseFloat(bt.getAttribute('data-v')))});
+  });
+  show(102.5);
+
+  /* ---------- closure comparison ---------- */
+  var S={
+    normal:{state:'Before the closure: 30 office days with all 300 desks open.',desks:'300',short:21.8,no:12.3},
+    closed:{state:'Floor partly closed: 10 office days with 60 desks out of service.',desks:'240',short:28.9,no:25.1},
+    back:{state:'After the closure: 20 office days, all 300 desks back.',desks:'300',short:21.7,no:13.8}
+  };
+  var sBar=document.getElementById('clShortBar'),nBar=document.getElementById('clNoBar');
+  function setS(k){
+    var d=S[k];
+    document.getElementById('clState').textContent=d.state;
+    document.getElementById('clDesks').textContent=d.desks;
+    document.getElementById('clShort').textContent=d.short.toFixed(1)+'%';
+    sBar.style.width=(d.short/40*100)+'%';
+    document.getElementById('clNo').textContent=d.no.toFixed(1)+'%';nBar.style.width=(d.no/40*100)+'%';
+    Array.prototype.forEach.call(document.querySelectorAll('.seg button'),function(b){
+      b.setAttribute('aria-pressed',b.getAttribute('data-s')===k?'true':'false');
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.seg button'),function(b){
+    b.addEventListener('click',function(){setS(b.getAttribute('data-s'))});
+  });
+  setS('normal');
+
+  /* ---------- 60 real days from odd_days.csv ---------- */
+  var DAYS=[["2026-06-01", 0.339, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-02", 0.346, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-03", 0.346, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-04", 0.352, 0, "Compared with a usual Thursday, almost nobody arrived to find no desk free.", ""], ["2026-06-05", 0.347, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-08", 0.383, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-09", 0.347, 0, "Compared with a usual Tuesday, far more people arrived to find no desk free.", ""], ["2026-06-10", 0.483, 0, "Compared with a usual Wednesday, almost nobody arrived to find no desk free; almost no desk bookings were turned down.", ""], ["2026-06-11", 0.379, 0, "Compared with a usual Thursday, almost nobody arrived to find no desk free; the floor was almost never close to full.", ""], ["2026-06-12", 0.335, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-15", 0.371, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-16", 0.365, 0, "Compared with a usual Tuesday, almost nobody arrived to find no desk free; the floor was almost never close to full.", ""], ["2026-06-17", 0.364, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-18", 0.343, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-19", 0.346, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-22", 0.349, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-23", 0.338, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-24", 0.611, 1, "Compared with a usual Wednesday, people stayed for much less time; the floor was almost never close to full.", "Fire drill at 11:20. Many people did not come back inside."], ["2026-06-25", 0.353, 0, "Compared with a usual Thursday, almost nobody arrived to find no desk free; the floor was almost never close to full.", ""], ["2026-06-26", 0.377, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-29", 0.352, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-06-30", 0.38, 0, "Compared with a usual Tuesday, almost nobody arrived to find no desk free; almost no desk bookings were turned down.", ""], ["2026-07-01", 0.393, 0, "Compared with a usual Wednesday, almost no desk bookings were turned down; almost nobody arrived to find no desk free.", ""], ["2026-07-02", 0.807, 1, "Compared with a usual Thursday, the floor was almost never close to full; almost nobody arrived to find no desk free.", "Company offsite. Most staff were away."], ["2026-07-03", 0.366, 0, "Compared with a usual Friday, fewer exit taps were missing.", ""], ["2026-07-06", 0.346, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-07-07", 0.34, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-07-08", 0.403, 0, "Compared with a usual Wednesday, almost nobody arrived to find no desk free; almost no desk bookings were turned down.", ""], ["2026-07-09", 0.364, 0, "Compared with a usual Thursday, almost nobody arrived to find no desk free.", ""], ["2026-07-10", 0.358, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-07-13", 0.479, 0, "Compared with a usual Monday, the floor stayed above 90 percent full for much longer; far more people left within 90 minutes.", "Part of floor 4 closed for repairs. 60 desks out of service."], ["2026-07-14", 0.527, 1, "Compared with a usual Tuesday, far more people arrived to find no desk free; many more desk bookings were turned down.", "Part of floor 4 closed for repairs. 60 desks out of service."], ["2026-07-15", 0.512, 0, "Compared with a usual Wednesday, far more people arrived to find no desk free; many more desk bookings were turned down.", "Part of floor 4 closed for repairs. 60 desks out of service."], ["2026-07-16", 0.592, 1, "Compared with a usual Thursday, far more people arrived to find no desk free; many more desk bookings were turned down.", "Part of floor 4 closed for repairs. 60 desks out of service."], ["2026-07-17", 0.42, 0, "Compared with a usual Friday, the building got much fuller.", "Part of floor 4 closed for repairs. 60 desks out of service."], ["2026-07-20", 0.517, 1, "Compared with a usual Monday, the floor stayed above 90 percent full for much longer; many more desk bookings were turned down.", "Part of floor 4 closed for repairs. 60 desks out of service."], ["2026-07-21", 0.579, 1, "Compared with a usual Tuesday, far more people arrived to find no desk free; many more desk bookings were turned down.", "Part of floor 4 closed for repairs. 60 desks out of service."], ["2026-07-22", 0.518, 1, "Compared with a usual Wednesday, far more people arrived to find no desk free; many more desk bookings were turned down.", "Part of floor 4 closed for repairs. 60 desks out of service."], ["2026-07-23", 0.563, 1, "Compared with a usual Thursday, far more people arrived to find no desk free; many more desk bookings were turned down.", "Part of floor 4 closed for repairs. 60 desks out of service."], ["2026-07-24", 0.419, 0, "Compared with a usual Friday, the building got much fuller.", "Part of floor 4 closed for repairs. 60 desks out of service."], ["2026-07-27", 0.374, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-07-28", 0.371, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-07-29", 0.379, 0, "Compared with a usual Wednesday, many more desk bookings were turned down.", ""], ["2026-07-30", 0.376, 0, "Compared with a usual Thursday, far more people arrived to find no desk free.", ""], ["2026-07-31", 0.364, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-08-03", 0.345, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-08-04", 0.428, 0, "Compared with a usual Tuesday, almost nobody arrived to find no desk free; almost no desk bookings were turned down.", ""], ["2026-08-05", 0.581, 1, "Compared with a usual Wednesday, many more exit taps were missing; the floor stayed above 90 percent full for much longer.", "Badge reader fault. Many exit taps were not recorded."], ["2026-08-06", 0.37, 0, "Compared with a usual Thursday, almost no desk bookings were turned down.", ""], ["2026-08-07", 0.372, 0, "Compared with a usual Friday, many more exit taps were missing.", ""], ["2026-08-10", 0.336, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-08-11", 0.387, 0, "Compared with a usual Tuesday, many more desk bookings were turned down; far more people arrived to find no desk free.", ""], ["2026-08-12", 0.36, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-08-13", 0.381, 0, "Compared with a usual Thursday, the floor was almost never close to full.", ""], ["2026-08-14", 0.342, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-08-17", 0.35, 0, "No single measure stands out. The mix of measures is unusual.", ""], ["2026-08-18", 0.351, 0, "Compared with a usual Tuesday, almost no desk bookings were turned down.", ""], ["2026-08-19", 0.394, 0, "Compared with a usual Wednesday, almost nobody arrived to find no desk free; almost no desk bookings were turned down.", ""], ["2026-08-20", 0.444, 0, "Compared with a usual Thursday, far more people arrived to find no desk free; many more desk bookings were turned down.", ""], ["2026-08-21", 0.369, 0, "Compared with a usual Friday, people stayed for much less time.", ""]]; /* [date, strangeness, flagged, what stood out, building log note] */
+  var cal=document.getElementById('cal'),info=document.getElementById('dayInfo'),ch='';
+  ['','Mon','Tue','Wed','Thu','Fri'].forEach(function(n){ch+='<span class="h">'+n+'</span>'});
+  var byDate={};DAYS.forEach(function(d){byDate[d[0]]=d});
+  var start=new Date(Date.UTC(2026,5,1));
+  for(var wk=0;wk<12;wk++){
+    ch+='<span class="w">Wk '+(wk+1)+'</span>';
+    for(var dd=0;dd<5;dd++){
+      var dt=new Date(start.getTime()+(wk*7+dd)*86400000);
+      var iso=dt.toISOString().slice(0,10),r=byDate[iso];
+      var cls=r?(r[2]&&r[4]?'hit':(r[4]?'miss':'')):'';
+      ch+='<button type="button" data-d="'+iso+'" class="'+cls+'" aria-pressed="false" aria-label="'+dt.toLocaleDateString('en-US',{month:'long',day:'numeric',timeZone:'UTC'})+(cls==='hit'?', flagged':(cls==='miss'?', noted but not flagged':''))+'">'+dt.getUTCDate()+'</button>';
+    }
+  }
+  cal.innerHTML=ch;
+  function pick(iso){
+    var r=byDate[iso];if(!r)return;
+    Array.prototype.forEach.call(cal.querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x.getAttribute('data-d')===iso?'true':'false')});
+    var title=new Date(iso+'T00:00:00Z').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',timeZone:'UTC'});
+    var status=r[2]?'Flagged by the model':(r[4]?'Noted in the log, but not flagged':'Ordinary day');
+    info.innerHTML='<p class="dt">'+title+'</p><p class="st">'+status+', strangeness '+r[1].toFixed(3)+'</p>'+
+      '<p><b>What stood out to the model.</b> '+r[3]+'</p>'+
+      '<p><b>What the building log says.</b> '+(r[4]||'No note for this day.')+'</p>';
+  }
+  cal.addEventListener('click',function(e){var b=e.target.closest('button');if(b)pick(b.getAttribute('data-d'))});
+  pick('2026-07-02');
+})();
+</script>
+</body>
+</html>
